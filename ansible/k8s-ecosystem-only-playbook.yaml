@@ -1,0 +1,6 @@
+- name: Configure ArgoCD for the c9s application
+  hosts:
+    - dev
+  become: true
+  roles:
+    - k8s-ecosystem
