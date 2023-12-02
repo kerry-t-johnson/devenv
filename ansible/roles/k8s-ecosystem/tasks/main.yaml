@@ -1,0 +1,116 @@
+- name: Install the required packages
+  ansible.builtin.package:
+    name:
+      - containerd
+    state: present
+
+
+# Manually downloaded/installed applications --------------------------------
+- name: Ensure downloadpath
+  ansible.builtin.file:
+    name: "{{ download_path }}"
+    state: directory
+
+# ----- kubectl --------------------------------------------------------------
+# Assumes rke2 installation
+- name: Link Kubectl CLI
+  ansible.builtin.file:
+    src: /var/lib/rancher/rke2/bin/kubectl
+    dest: /usr/local/bin/kubectl
+    state: link
+
+# ----- k9s -------------------------------------------------------------------
+- name: Ensure k9s downloadpath
+  ansible.builtin.file:
+    name: "{{ download_path }}/k9s-{{ k9s_version }}"
+    state: directory
+
+- name: Download k9s CLI ({{ k9s_version }})
+  ansible.builtin.get_url:
+    url: https://github.com/derailed/k9s/releases/download/{{ k9s_version }}/k9s_Linux_amd64.tar.gz
+    dest: "{{ download_path }}/k9s-{{ k9s_version }}/k9s_Linux_amd64.tar.gz"
+
+- name: Extract k9s CLI
+  ansible.builtin.unarchive:
+    src: "{{ download_path }}/k9s-{{ k9s_version }}/k9s_Linux_amd64.tar.gz"
+    dest: "{{ download_path }}/k9s-{{ k9s_version }}"
+    remote_src: true
+    mode: 0555
+
+- name: Link k9s CLI
+  ansible.builtin.file:
+    src: "{{ download_path }}/k9s-{{ k9s_version }}/k9s"
+    dest: /usr/local/bin/k9s
+    state: link
+
+# ----- Helm ------------------------------------------------------------------
+- name: Ensure Helm downloadpath
+  ansible.builtin.file:
+    name: "{{ download_path }}/helm-{{ helm_version }}"
+    state: directory
+
+- name: Download Helm CLI ({{ helm_version }})
+  ansible.builtin.get_url:
+    url:  https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz
+    dest: "{{ download_path }}/helm-{{ helm_version }}/helm-{{ helm_version }}-linux-amd64.tar.gz"
+    decompress: false
+
+- name: Extract Helm CLI
+  ansible.builtin.unarchive:
+    src: "{{ download_path }}/helm-{{ helm_version }}/helm-{{ helm_version }}-linux-amd64.tar.gz"
+    dest: "{{ download_path }}/helm-{{ helm_version }}"
+    remote_src: true
+    mode: 0555
+
+- name: Link Helm CLI
+  ansible.builtin.file:
+    src: "{{ download_path }}/helm-{{ helm_version }}/linux-amd64/helm"
+    dest: /usr/local/bin/helm
+    state: link
+
+# ----- ArgoCD ----------------------------------------------------------------
+- name: Ensure ArgoCD downloadpath
+  ansible.builtin.file:
+    name: "{{ download_path }}/argocd-{{ argocd_version }}"
+    state: directory
+
+- name: Download ArgoCD CLI ({{ argocd_version }})
+  ansible.builtin.get_url:
+    url: https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-linux-amd64
+    dest: "{{ download_path }}/argocd-{{ argocd_version}}/argocd-linux-amd64"
+    mode: 0555
+
+- name: Link ArgoCD CLI
+  ansible.builtin.file:
+    src: "{{ download_path }}/argocd-{{ argocd_version}}/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    state: link
+
+# ----- Telepresence ---------------------------------------------------------
+- name: Ensure Telepresence downloadpath
+  ansible.builtin.file:
+    name: "{{ download_path }}/telepresence-{{ telepresence_version }}"
+    state: directory
+
+- name: Download Telepresence CLI ({{ telepresence_version }})
+  ansible.builtin.get_url:
+    url:  https://app.getambassador.io/download/tel2oss/releases/download/{{ telepresence_version }}/telepresence-linux-amd64
+    dest: /usr/local/bin/telepresence-{{ telepresence_version }}
+    mode: 0555
+
+- name: Link Telepresence CLI
+  ansible.builtin.file:
+    src: /usr/local/bin/telepresence-{{ telepresence_version }}
+    dest: /usr/local/bin/telepresence
+    state: link
+
+
+# ----- k8s Cluster Configuration ---------------------------------------------
+- name: Install in-cluster tools
+  import_tasks: cluster-configuration.yaml
+  when: configure_k8s_cluster|default(true)|bool == true
+
+# ----- Boids Application Configuration ---------------------------------------
+- name: Install Boids application(s) in cluster
+  import_tasks: boids-configuration.yaml
+  when: configure_boids|default(true)|bool == true

@@ -1,0 +1,18 @@
+---
+system_kubeconfig: /etc/rancher/rke2/rke2.yaml
+
+# Linux user
+username: kerry
+user_kubeconfig: /home/{{ username }}/.kube/config
+user_dev_root: "/home/{{ username }}/dev"
+
+download_path: /usr/local/downloads
+
+helm_version: v3.12.3
+telepresence_version: v2.15.1
+argocd_version: v2.8.2
+k9s_version: v0.28.2
+
+# Defaults to true:
+# configure_k8s_cluster: false
+configure_boids: false

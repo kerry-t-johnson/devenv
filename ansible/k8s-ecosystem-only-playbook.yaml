@@ -1,0 +1,6 @@
+- name: Configure localhost for k8s ecosystem
+  hosts:
+    - dev
+  become: true
+  roles:
+    - k8s-ecosystem
