@@ -1,18 +1,18 @@
 ---
-# Windows username
-win_username: kerry
+system_kubeconfig: /etc/rancher/rke2/rke2.yaml
 
-# Linux path to Windows
-win_root: /mnt/c
-
-# Linux username
+# Linux user
 username: kerry
+user_kubeconfig: /home/{{ username }}/.kube/config
+user_dev_root: "/home/{{ username }}/dev"
 
 download_path: /usr/local/downloads
 
-kubectl_version: v1.28.1
 helm_version: v3.12.3
-telepresence_version: v2.14.2
-wintun_version: 0.14.1
+telepresence_version: v2.15.1
 argocd_version: v2.8.2
-k9s_version: v0.27.4
+k9s_version: v0.28.2
+
+# Defaults to true:
+# configure_k8s_cluster: false
+configure_boids: false

@@ -1,0 +1,28 @@
+# NOTE: Assumes a k8s cluster is running
+- name: Ensure telepresence installed in cluster
+  ansible.builtin.command:
+    cmd: telepresence helm install --kubeconfig {{ system_kubeconfig }}
+  register: telepresence_helm_install_result
+  changed_when: "'is already installed' is not in telepresence_helm_install_result.stderr"
+  failed_when:
+    - "'installed successfully' is not in telepresence_helm_install_result.stderr"
+    - "'is already installed' is not in telepresence_helm_install_result.stderr"
+
+- name: Install k8s python module
+  ansible.builtin.pip:
+    name: kubernetes
+
+- name: Create argocd namespace
+  kubernetes.core.k8s:
+    name: argocd
+    api_version: v1
+    kind: Namespace
+    state: present
+    kubeconfig: "{{ system_kubeconfig }}"
+
+- name: Create ArgoCD deployment
+  kubernetes.core.k8s:
+    namespace: argocd
+    state: present
+    src: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    kubeconfig: "{{ system_kubeconfig }}"

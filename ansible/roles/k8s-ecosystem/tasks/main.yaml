@@ -1,24 +1,21 @@
+- name: Install the required packages
+  ansible.builtin.package:
+    name:
+      - containerd
+    state: present
 
+
+# Manually downloaded/installed applications --------------------------------
 - name: Ensure downloadpath
   ansible.builtin.file:
     name: "{{ download_path }}"
     state: directory
 
 # ----- kubectl --------------------------------------------------------------
-- name: Ensure kubectl downloadpath
-  ansible.builtin.file:
-    name: "{{ download_path }}/kubectl-{{ kubectl_version }}"
-    state: directory
-
-- name: Download Kubectl CLI ({{ kubectl_version }})
-  ansible.builtin.get_url:
-    url: https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl
-    dest: "{{ download_path }}/kubectl-{{ kubectl_version }}/kubectl-linux-amd64"
-    mode: 0555
-
+# Assumes rke2 installation
 - name: Link Kubectl CLI
   ansible.builtin.file:
-    src: "{{ download_path }}/kubectl-{{ kubectl_version }}/kubectl-linux-amd64"
+    src: /var/lib/rancher/rke2/bin/kubectl
     dest: /usr/local/bin/kubectl
     state: link
 
@@ -89,13 +86,7 @@
     dest: /usr/local/bin/argocd
     state: link
 
-# ----- Telepresence and Wintun -----------------------------------------------
-## NOTE: Telepresence and Wintun must be used as Windows applications
-- name: Ensure user bin path (windows)
-  ansible.builtin.file:
-    name: "{{ win_root }}/Users/{{ win_username }}/bin"
-    state: directory
-
+# ----- Telepresence ---------------------------------------------------------
 - name: Ensure Telepresence downloadpath
   ansible.builtin.file:
     name: "{{ download_path }}/telepresence-{{ telepresence_version }}"
@@ -103,35 +94,23 @@
 
 - name: Download Telepresence CLI ({{ telepresence_version }})
   ansible.builtin.get_url:
-    url:  https://app.getambassador.io/download/tel2oss/releases/download/{{ telepresence_version }}/telepresence-windows-amd64.exe
-    dest: "{{ download_path }}/telepresence-{{ telepresence_version }}/telepresence-windows-amd64.exe"
+    url:  https://app.getambassador.io/download/tel2oss/releases/download/{{ telepresence_version }}/telepresence-linux-amd64
+    dest: /usr/local/bin/telepresence-{{ telepresence_version }}
     mode: 0555
 
-- name: Copy Telepresence CLI to Window User's PATH
-  ansible.builtin.copy:
-    src: "{{ download_path }}/telepresence-{{ telepresence_version }}/telepresence-windows-amd64.exe"
-    dest: "{{ win_root }}/Users/{{ win_username }}/bin/telepresence-windows-amd64.exe"
-    mode: 0555
-
-- name: Ensure Wintun downloadpath
+- name: Link Telepresence CLI
   ansible.builtin.file:
-    name: "{{ download_path }}/wintun-{{ wintun_version }}"
-    state: directory
+    src: /usr/local/bin/telepresence-{{ telepresence_version }}
+    dest: /usr/local/bin/telepresence
+    state: link
 
-- name: Download Wintun (Telepresence dependency, {{ wintun_version }})
-  ansible.builtin.get_url:
-    url:  https://www.wintun.net/builds/wintun-{{ wintun_version }}.zip
-    dest: "{{ download_path }}/wintun-{{ wintun_version }}/wintun-{{ wintun_version }}.zip"
 
-- name: Extract Wintun (Telepresence dependency)
-  ansible.builtin.unarchive:
-    src: "{{ download_path }}/wintun-{{ wintun_version }}/wintun-{{ wintun_version }}.zip"
-    dest: "{{ download_path }}/wintun-{{ wintun_version }}"
-    remote_src: true
-    mode: 0555
+# ----- k8s Cluster Configuration ---------------------------------------------
+- name: Install in-cluster tools
+  import_tasks: cluster-configuration.yaml
+  when: configure_k8s_cluster|default(true)|bool == true
 
-- name: Copy Wintun DLL to Windows User's PATH
-  ansible.builtin.copy:
-    src: "{{ download_path }}/wintun-{{ wintun_version }}/wintun/bin/amd64/wintun.dll"
-    dest: "{{ win_root }}/Users/{{ win_username }}/bin/wintun.dll"
-
+# ----- Boids Application Configuration ---------------------------------------
+- name: Install Boids application(s) in cluster
+  import_tasks: boids-configuration.yaml
+  when: configure_boids|default(true)|bool == true

@@ -1,4 +1,4 @@
-- name: Configure ArgoCD for the c9s application
+- name: Configure localhost for k8s ecosystem
   hosts:
     - dev
   become: true
